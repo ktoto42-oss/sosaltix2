@@ -11,8 +11,13 @@ use sosaltix2::println;
 pub extern "C" fn _start() -> ! {
     println!("Welcome to Sosaltix{}", "!");
 
+    sosaltix2::init();
+    x86_64::instructions::interrupts::int3();
+
     #[cfg(test)]
     test_main();
+
+    println!("It did not crash!");
 
     loop {}
 }
