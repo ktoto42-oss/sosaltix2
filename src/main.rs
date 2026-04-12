@@ -9,11 +9,10 @@ use sosaltix2::println;
 
 #[unsafe(no_mangle)]
 pub extern "C" fn _start() -> ! {
-    println!("Welcome to Sosaltix{}", "!");
+    println!("Welcome to Sosaltix2{}", "!");
 
     sosaltix2::init();
-    x86_64::instructions::interrupts::int3();
-
+    
     #[cfg(test)]
     test_main();
 
