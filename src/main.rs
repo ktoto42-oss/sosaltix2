@@ -6,13 +6,34 @@
 
 use core::panic::PanicInfo;
 use sosaltix2::println;
+use bootloader::{BootInfo, entry_point};
 
-#[unsafe(no_mangle)]
-pub extern "C" fn _start() -> ! {
-    println!("Welcome to Sosaltix2{}", "!");
+entry_point!(kernel_main);
 
+fn kernel_main(boot_info: &'static BootInfo) -> ! {
+    use sosaltix2::memory::active_level_4_table;
+    use x86_64::VirtAddr;
+    use sosaltix2::memory::translate_addr;
+
+    println!("Welcome to Sosaltix2");
     sosaltix2::init();
-    
+
+    let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
+
+    let addresses = [
+        0xb8000,
+        0x201008,
+        0x0100_0020_1a10,
+        boot_info.physical_memory_offset,
+    ];
+
+    for &address in &addresses {
+        let virt = VirtAddr::new(address);
+        let phys = unsafe { translate_addr(virt, phys_mem_offset) };
+        println!("{:?} -> {:?}", virt, phys);
+    }
+
+
     #[cfg(test)]
     test_main();
 
