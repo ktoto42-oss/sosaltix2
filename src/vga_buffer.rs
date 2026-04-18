@@ -20,8 +20,6 @@ pub enum Color {
     White = 15,
 }
 
-
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(transparent)]
 struct ColorCode(u8);
@@ -31,8 +29,6 @@ impl ColorCode {
         ColorCode((background as u8) << 4 | (foreground as u8))
     }
 }
-
-
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(C)]
@@ -50,13 +46,13 @@ struct Buffer {
     chars: [[Volatile<ScreenChar>; BUFFER_WIDTH]; BUFFER_HEIGHT],
 }
 
+// хуйня которая пишет
+
 pub struct Writer {
     column_position: usize,
     color_code: ColorCode,
     buffer: &'static mut Buffer,
 }
-
-
 
 impl Writer {
     fn clear_row(&mut self, row: usize) {
@@ -128,7 +124,7 @@ lazy_static! {
     });
 }
 
-
+// макросы
 
 #[macro_export]
 macro_rules! print {
@@ -144,7 +140,6 @@ macro_rules! println {
 #[doc(hidden)]
 pub fn _print(args: fmt::Arguments) {
     use core::fmt::Write;
-    //WRITER.lock().write_fmt(args).unwrap();
     use x86_64::instructions::interrupts;
 
     interrupts::without_interrupts(|| {
@@ -153,6 +148,8 @@ pub fn _print(args: fmt::Arguments) {
 }
 
 
+
+// тэстики
 
 #[test_case]
 fn test_println_simple() {

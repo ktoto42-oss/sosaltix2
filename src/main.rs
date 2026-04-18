@@ -8,7 +8,10 @@ use core::panic::PanicInfo;
 use sosaltix2::println;
 use bootloader::{BootInfo, entry_point};
 extern crate alloc;
-use alloc::{boxed::Box, vec, vec::Vec, rc::Rc};
+use sosaltix2::task::Task;
+use sosaltix2::task::keyboard;
+use sosaltix2::task::executor::Executor;
+use sosaltix2::shell;
 
 entry_point!(kernel_main);
 
@@ -19,6 +22,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     use sosaltix2::memory::BootInfoFrameAllocator;
 
     println!("Welcome to Sosaltix2");
+
     sosaltix2::init();
 
     let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
@@ -36,28 +40,18 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     allocator::init_heap(&mut mapper, &mut frame_allocator)
         .expect("heap initialization failed");
 
-    let heap_value = Box::new(41);
-    println!("heap_value at {:p}", heap_value);
 
-    let mut vec = Vec::new();
-    for i in 0..500 {
-        vec.push(i);
-    }
-    println!("vec at {:p}", vec.as_slice());
-
-    let reference_counted = Rc::new(vec![1, 2, 3]);
-    let cloned_reference = reference_counted.clone();
-    println!("current reference count is {}", Rc::strong_count(&cloned_reference));
-    core::mem::drop(reference_counted);
-    println!("reference count is {} now", Rc::strong_count(&cloned_reference));
+    let mut executor = Executor::new();
+    executor.spawn(Task::new(shell::run_shell()));
+    executor.run();
 
     #[cfg(test)]
     test_main();
 
-    println!("It did not crash!");
-
     sosaltix2::hlt_loop();
 }
+
+// тэстики
 
 #[cfg(not(test))]
 #[panic_handler]
