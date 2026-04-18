@@ -1,15 +1,7 @@
-use alloc::alloc::{GlobalAlloc, Layout};
-use core::ptr::null_mut;
-
-use bump::BumpAllocator;
 pub mod bump;
 pub mod fixed_size_block;
 pub mod linked_list;
-
-use linked_list::LinkedListAllocator;
 use fixed_size_block::FixedSizeBlockAllocator;
-
-use linked_list_allocator::LockedHeap;
 
 #[global_allocator]
 static ALLOCATOR: Locked<FixedSizeBlockAllocator> = Locked::new(
@@ -73,3 +65,4 @@ impl<A> Locked<A> {
 fn align_up(addr: usize, align: usize) -> usize {
     (addr + align - 1) & !(align - 1)
 }
+
