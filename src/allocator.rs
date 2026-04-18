@@ -9,6 +9,8 @@ pub mod linked_list;
 use linked_list::LinkedListAllocator;
 use fixed_size_block::FixedSizeBlockAllocator;
 
+use linked_list_allocator::LockedHeap;
+
 #[global_allocator]
 static ALLOCATOR: Locked<FixedSizeBlockAllocator> = Locked::new(
     FixedSizeBlockAllocator::new());
