@@ -1,3 +1,5 @@
+// на эту хуйню похуй тк она не юзается 
+
 struct ListNode {
     next: Option<&'static mut ListNode>,
 }

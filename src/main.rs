@@ -11,6 +11,7 @@ extern crate alloc;
 use sosaltix2::task::Task;
 use sosaltix2::task::keyboard;
 use sosaltix2::task::executor::Executor;
+use sosaltix2::shell;
 
 entry_point!(kernel_main);
 
@@ -21,6 +22,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     use sosaltix2::memory::BootInfoFrameAllocator;
 
     println!("Welcome to Sosaltix2");
+
     sosaltix2::init();
 
     let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
@@ -38,27 +40,18 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     allocator::init_heap(&mut mapper, &mut frame_allocator)
         .expect("heap initialization failed");
 
+
     let mut executor = Executor::new();
-    executor.spawn(Task::new(example_task()));
-    executor.spawn(Task::new(keyboard::print_keypresses()));
+    executor.spawn(Task::new(shell::run_shell()));
     executor.run();
 
     #[cfg(test)]
     test_main();
 
-    println!("It did not crash!");
-
     sosaltix2::hlt_loop();
 }
 
-async fn async_number() -> u32 {
-    42
-}
-
-async fn example_task() {
-    let number = async_number().await;
-    println!("async number: {}", number);
-}
+// тэстики
 
 #[cfg(not(test))]
 #[panic_handler]

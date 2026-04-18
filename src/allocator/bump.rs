@@ -1,3 +1,5 @@
+// на эту хуйню похуй тк она не юзается 
+
 pub struct BumpAllocator {
     heap_start: usize,
     heap_end: usize,
