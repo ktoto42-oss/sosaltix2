@@ -76,6 +76,8 @@ pub fn test_panic_handler(info: &PanicInfo) -> ! {
     hlt_loop();
 }
 
+// тэстики
+
 #[cfg(test)]
 use bootloader::{entry_point, BootInfo};
 

@@ -87,11 +87,13 @@ pub async fn run_shell() {
                 match key {
                     DecodedKey::Unicode(character) => {
                         match character {
+                            // переход на новою строку
                             '\n' | '\r' => {
                                 println!();
                                 process_command().await;
                                 print!("> ");
                             }
+                            // удаление (визуально не работает)
                             '\x08' | '\x7F' => { // backspace или delete
                                 unsafe {
                                     let pos_ptr: *const usize = &raw const BUFFER_POS;
@@ -102,6 +104,7 @@ pub async fn run_shell() {
                                     }
                                 }
                             }
+                            // вывод
                             _ => {
                                 print!("{}", character);
                                 unsafe {
@@ -119,6 +122,7 @@ pub async fn run_shell() {
                             }
                         }
                     }
+                    // стрелочки мб доделаю
                     DecodedKey::RawKey(_key) => {}
                 }
             }

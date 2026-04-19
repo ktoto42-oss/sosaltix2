@@ -37,6 +37,7 @@ struct ScreenChar {
     color_code: ColorCode,
 }
 
+// размер буфера
 const BUFFER_HEIGHT: usize = 25;
 const BUFFER_WIDTH: usize = 80;
 
@@ -47,7 +48,6 @@ struct Buffer {
 }
 
 // хуйня которая пишет
-
 pub struct Writer {
     column_position: usize,
     color_code: ColorCode,

@@ -31,6 +31,7 @@ use core::task::{Context, Poll};
 
 impl Executor {
     fn run_ready_tasks(&mut self) {
+        // деструктуризация self
         let Self {
             tasks,
             task_queue,
@@ -40,7 +41,7 @@ impl Executor {
         while let Some(task_id) = task_queue.pop() {
             let task = match tasks.get_mut(&task_id) {
                 Some(task) => task,
-                None => continue,
+                None => continue, // task больше нету 
             };
             let waker = waker_cache
                 .entry(task_id)
@@ -48,6 +49,7 @@ impl Executor {
             let mut context = Context::from_waker(waker);
             match task.poll(&mut context) {
                 Poll::Ready(()) => {
+                    // задача готова => удалить ее и кеширумый waker
                     tasks.remove(&task_id);
                     waker_cache.remove(&task_id);
                 }

@@ -40,7 +40,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     allocator::init_heap(&mut mapper, &mut frame_allocator)
         .expect("heap initialization failed");
 
-
+    // запуск задач
     let mut executor = Executor::new();
     executor.spawn(Task::new(shell::run_shell()));
     executor.run();

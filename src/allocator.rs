@@ -7,8 +7,9 @@ use fixed_size_block::FixedSizeBlockAllocator;
 static ALLOCATOR: Locked<FixedSizeBlockAllocator> = Locked::new(
     FixedSizeBlockAllocator::new());
 
+// размер heap
 pub const HEAP_START: usize = 0x_4444_4444_0000;
-pub const HEAP_SIZE: usize = 100 * 1024;
+pub const HEAP_SIZE: usize = 100 * 1024; // 100 kb
 
 use x86_64::{
     structures::paging::{

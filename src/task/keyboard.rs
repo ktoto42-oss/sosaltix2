@@ -5,6 +5,8 @@ static SCANCODE_QUEUE: OnceCell<ArrayQueue<u8>> = OnceCell::uninit();
 
 use crate::println;
 
+// вызывается обработчиком прерываний клавиатуры
+// не додолжен блокировать или аллоцировать память
 pub(crate) fn add_scancode(scancode: u8) {
     if let Ok(queue) = SCANCODE_QUEUE.try_get() {
         if let Err(_) = queue.push(scancode) {
@@ -43,7 +45,7 @@ impl Stream for ScancodeStream {
         let queue = SCANCODE_QUEUE
             .try_get()
             .expect("scancode queue not initialized");
-
+        
         if let Some(scancode) = queue.pop() {
             return Poll::Ready(Some(scancode));
         }
@@ -59,6 +61,7 @@ impl Stream for ScancodeStream {
     }
 }
 
+// на это похуй тк принт теперь в shell
 use futures_util::stream::StreamExt;
 use pc_keyboard::{layouts, DecodedKey, HandleControl, Keyboard, ScancodeSet1};
 use crate::print;

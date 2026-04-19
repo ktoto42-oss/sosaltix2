@@ -1,9 +1,8 @@
-// на эту хуйню похуй тк она не юзается 
-
 struct ListNode {
     next: Option<&'static mut ListNode>,
 }
 
+// размеры блоков (степень 2)
 const BLOCK_SIZES: &[usize] = &[8, 16, 32, 64, 128, 256, 512, 1024, 2048];
 
 pub struct FixedSizeBlockAllocator {
@@ -12,6 +11,7 @@ pub struct FixedSizeBlockAllocator {
 }
 
 impl FixedSizeBlockAllocator {
+    // создаёт пустой аллокатор
     pub const fn new() -> Self {
         const EMPTY: Option<&'static mut ListNode> = None;
         FixedSizeBlockAllocator {
@@ -20,9 +20,9 @@ impl FixedSizeBlockAllocator {
         }
     }
 
+    // инит аллокатора
     pub unsafe fn init(&mut self, heap_start: usize, heap_size: usize) {
         unsafe { self.fallback_allocator.init(heap_start, heap_size);
-        //assert!(!self.fallback_allocator.is_empty()); 
     }
     }
 }
@@ -31,6 +31,7 @@ use alloc::alloc::Layout;
 use core::ptr;
 
 impl FixedSizeBlockAllocator {
+    // аллокация через fallback_alloc
     fn fallback_alloc(&mut self, layout: Layout) -> *mut u8 {
         match self.fallback_allocator.allocate_first_fit(layout) {
             Ok(ptr) => ptr.as_ptr(),
@@ -39,6 +40,7 @@ impl FixedSizeBlockAllocator {
     }
 }
 
+// выбирает размер блоков
 fn list_index(layout: &Layout) -> Option<usize> {
     let required_block_size = layout.size().max(layout.align());
     BLOCK_SIZES.iter().position(|&s| s >= required_block_size)
@@ -59,7 +61,9 @@ unsafe impl GlobalAlloc for Locked<FixedSizeBlockAllocator> {
                     node as *mut ListNode as *mut u8
                 }
                 None => {
+                    // в списке нет блока => выделить новый блок
                     let block_size = BLOCK_SIZES[index];
+                    // работает только со степенями 2
                     let block_align = block_size;
                     let layout = Layout::from_size_align(block_size, block_align)
                         .unwrap();
@@ -78,6 +82,7 @@ unsafe impl GlobalAlloc for Locked<FixedSizeBlockAllocator> {
             let new_node = ListNode {
                 next: allocator.list_heads[index].take(),
             };
+            // блок имеет нужный размер и выравнивание для хранения узла
             assert!(mem::size_of::<ListNode>() <= BLOCK_SIZES[index]);
             assert!(mem::align_of::<ListNode>() <= BLOCK_SIZES[index]);
             let new_node_ptr = ptr as *mut ListNode;

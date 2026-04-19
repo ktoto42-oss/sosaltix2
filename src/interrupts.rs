@@ -47,7 +47,7 @@ extern "x86-interrupt" fn double_fault_handler(
     panic!("EXCEPTION: DOUBLE FAULT\n{:#?}", stack_frame);
 }
 
-
+// прерывания таймера
 extern "x86-interrupt" fn timer_interrupt_handler(
     _stack_frame: InterruptStackFrame)
 {
@@ -58,14 +58,17 @@ extern "x86-interrupt" fn timer_interrupt_handler(
     }
 }
 
+// прерывания клавы
 extern "x86-interrupt" fn keyboard_interrupt_handler(
     _stack_frame: InterruptStackFrame
 ) {
     use x86_64::instructions::port::Port;
 
+    // считывание
     let mut port = Port::new(0x60);
     let scancode: u8 = unsafe { port.read() };
-    crate::shell::add_scancode(scancode);
+
+    crate::shell::add_scancode(scancode); // передача в shell
 
     unsafe {
         PICS.lock()
@@ -76,6 +79,7 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(
 use x86_64::structures::idt::PageFaultErrorCode;
 use crate::hlt_loop;
 
+// обработчик отказов страниц
 extern "x86-interrupt" fn page_fault_handler(
     stack_frame: InterruptStackFrame,
     error_code: PageFaultErrorCode,
