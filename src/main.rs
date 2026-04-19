@@ -9,7 +9,6 @@ use sosaltix2::println;
 use bootloader::{BootInfo, entry_point};
 extern crate alloc;
 use sosaltix2::task::Task;
-use sosaltix2::task::keyboard;
 use sosaltix2::task::executor::Executor;
 use sosaltix2::shell;
 
