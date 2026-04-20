@@ -6,6 +6,15 @@
 #![feature(abi_x86_interrupt)]
 extern crate alloc;
 
+pub mod serial;
+pub mod vga_buffer;
+pub mod interrupts;
+pub mod gdt;
+pub mod memory;
+pub mod allocator;
+pub mod task;
+pub mod shell;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]
 pub enum QemuExitCode {
@@ -27,15 +36,6 @@ use core::panic::PanicInfo;
 pub trait Testable {
     fn run(&self) -> ();
 }
-
-pub mod serial;
-pub mod vga_buffer;
-pub mod interrupts;
-pub mod gdt;
-pub mod memory;
-pub mod allocator;
-pub mod task;
-pub mod shell;
 
 pub fn init() {
     gdt::init();

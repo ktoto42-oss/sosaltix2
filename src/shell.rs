@@ -163,7 +163,7 @@ async fn process_command() {
             println!("{}", args);
         }
         "help" => {
-            println!("Available commands: echo, help");
+            println!("Available commands: echo, help, clear");
         }
         "clear" => {
             // костыль ебучий
