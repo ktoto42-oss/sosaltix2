@@ -79,7 +79,7 @@ pub fn test_panic_handler(info: &PanicInfo) -> ! {
 // тэстики
 
 #[cfg(test)]
-use bootloader::{entry_point, BootInfo};
+use bootloader_api::{entry_point, BootInfo};
 
 #[cfg(test)]
 entry_point!(test_kernel_main);

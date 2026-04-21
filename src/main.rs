@@ -6,7 +6,7 @@
 
 use core::panic::PanicInfo;
 use sosaltix2::println;
-use bootloader::{BootInfo, entry_point};
+use bootloader_api::{BootInfo, entry_point};
 extern crate alloc;
 use sosaltix2::task::Task;
 use sosaltix2::task::executor::Executor;
@@ -64,4 +64,5 @@ fn panic(info: &PanicInfo) -> ! {
 fn panic(info: &PanicInfo) -> ! {
     sosaltix2::test_panic_handler(info)
 }
+
 

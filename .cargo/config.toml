@@ -9,4 +9,4 @@ panic-abort-tests = true
 
 
 [target.'cfg(target_os = "none")']
-runner = "bootimage runner"
+runner = "bootloader runner"
