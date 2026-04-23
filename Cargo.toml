@@ -1,61 +1,28 @@
-[package]
-name = "sosaltix2"
-version = "0.1.0"
-authors = ["ktoto <github.com/ktoto42-oss>"]
-edition = "2024"
+[workspace]
+resolver = "3"
+members = ["kernel"]
 
 [profile.dev]
-panic = "abort" 
+panic = "abort"
 
 [profile.release]
-panic = "abort" 
+panic = "abort"
+
+[package]
+name = "sosaltix2-boot"
+version = "0.1.0"
+edition = "2024"
 
 [dependencies]
-bootloader = { version = "0.9.34", features = ["map_physical_memory"]}
-volatile  = "0.6"
-spin = "0.10"
-x86_64 = "0.15"
-uart_16550 = "0.6"
-pic8259 = "0.11"
-pc-keyboard = "0.8"
-linked_list_allocator = "0.10"
+anyhow = "1.0"
 
-[dependencies.lazy_static]
-version = "1.5"
-features = ["spin_no_std"]
+[build-dependencies]
+bootloader = "0.11"
+sosaltix2 = { path = "kernel", artifact = "bin", target = "x86_64-unknown-none" }
 
-[dependencies.crossbeam-queue]
-version = "0.3"
-default-features = false
-features = ["alloc"]
 
-[dependencies.conquer-once]
-version = "0.2"
-default-features = false
 
-[dependencies.futures-util]
-version = "0.3"
-default-features = false
-features = ["alloc"]
 
-[[bin]]
-name = "sosaltix2"
-test = true
-bench = false
 
-[package.metadata.bootimage]
-test-args = [
-    "-device", "isa-debug-exit,iobase=0xf4,iosize=0x04", "-serial", "stdio",
-    "-display", "none"
-]
-test-success-exit-code = 33 
-test-timeout = 120 
 
-[[test]]
-name = "stack_overflow"
-harness = false
-
-[[test]]
-name = "should_panic"
-harness = false
 
