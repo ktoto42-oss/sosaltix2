@@ -1,5 +1,5 @@
-[target.x86_64-unknown-none]
-rustflags = ["-C", "link-arg=-Tlinker.ld"]
+[build]
+target = "x86_64-sosaltix2.json"
 
 [unstable]
 json-target-spec = true
@@ -11,5 +11,5 @@ bindeps = true
 [target.'cfg(target_os = "none")']
 runner = "bootloader"
 
-#[target.x86_64-unknown-none]
-#runner = "qemu-system-x86_64"
+[target.x86_64-unknown-none]
+runner = "qemu-system-x86_64"
