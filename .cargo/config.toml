@@ -6,7 +6,10 @@ json-target-spec = true
 build-std-features = ["compiler-builtins-mem"]
 build-std = ["core", "compiler_builtins", "alloc"]
 panic-abort-tests = true
-
+bindeps = true
 
 [target.'cfg(target_os = "none")']
-runner = "bootimage runner"
+runner = "bootloader"
+
+[target.x86_64-unknown-none]
+runner = "qemu-system-x86_64"

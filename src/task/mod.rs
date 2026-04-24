@@ -20,7 +20,6 @@ impl Task {
     }
 }
 
-pub mod keyboard;
 pub mod executor;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
