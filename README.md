@@ -20,7 +20,6 @@
 
 - **Rust** (nightly) — проект использует nightly-фичи
 - **QEMU** (опционально) — для эмуляции
-- **bootimage** — для создания загрузочного образа
 
 ### Установка зависимостей
 
@@ -34,9 +33,6 @@ rustup default nightly
 # Установка компонентов
 rustup component add rust-src
 rustup component add llvm-tools-preview
-
-# Установка bootimage
-cargo install bootimage
 
 # Установка QEMU (Arch Linux)
 sudo pacman -S qemu
@@ -53,27 +49,11 @@ cd sosaltix2
 # Сборка проекта
 cargo build
 
-# Создание загрузочного образа
-cargo bootimage
+# Запуск (UEFI)
+cargo run uefi
+
+# Запуск (BIOS)
+cargo run bios
 ```
-### Запуск в QEMU 
 
-```bash
-# Запуск с автоматической сборкой
-cargo run
-
-# Или запуск готового образа
-qemu-system-x86_64 -drive format=raw,file=target/x86_64-sosaltix2/debug/bootimage-sosaltix2.bin
-```
-### Сборка для реального пк
-
-```bash
-# Релизная сборка (меньший размер)
-cargo bootimage --release
-
-# Запись на USB-накопитель (замените /dev/sdX на ваше устройство!)
-sudo dd if=target/x86_64-sosaltix2/release/bootimage-sosaltix2.bin of=/dev/sdX bs=4M status=progress
-```
-## Использование
-
-Всего есть три команды: echo, clear, help. Сами поймёте крч
+На реально пк оно скорее всего не заработает (оно и в qemu уходит в бутлуп)
