@@ -14,6 +14,7 @@ pub mod memory;
 pub mod allocator;
 pub mod task;
 pub mod shell;
+pub mod font;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]
@@ -75,8 +76,6 @@ pub fn test_panic_handler(info: &PanicInfo) -> ! {
     exit_qemu(QemuExitCode::Failed);
     hlt_loop();
 }
-
-// тэстики
 
 #[cfg(test)]
 use bootloader_api::{entry_point, BootInfo};
