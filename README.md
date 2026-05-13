@@ -52,8 +52,4 @@ cargo build
 # Запуск (UEFI)
 cargo run uefi
 
-# Запуск (BIOS)
-cargo run bios
 ```
-
-На реально пк оно скорее всего не заработает (оно и в qemu уходит в бутлуп)
