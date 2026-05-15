@@ -5,13 +5,12 @@
 #![reexport_test_harness_main = "test_main"]
 
 use core::panic::PanicInfo;
-use kernel::println;
+use kernel::{println, allocator, memory};
 use bootloader_api::{entry_point, BootInfo, BootloaderConfig, config::Mapping};
-use bootloader_api::info::{MemoryRegions, Optional};
-extern crate alloc;
-use kernel::task::Task;
-use kernel::task::executor::Executor;
-use kernel::shell;
+use bootloader_api::info::{Optional, MemoryRegions};
+use x86_64::VirtAddr;
+use kernel::memory::BootInfoFrameAllocator;
+use x86_64::structures::paging::Page;
 
 const BOOTLOADER_CONFIG: BootloaderConfig = {
     let mut config = BootloaderConfig::new_default();
@@ -22,19 +21,16 @@ const BOOTLOADER_CONFIG: BootloaderConfig = {
 entry_point!(kernel_main, config = &BOOTLOADER_CONFIG);
 
 fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
-    use kernel::memory;
-    use kernel::allocator;
-    use x86_64::{structures::paging::Page, VirtAddr};
-    use kernel::memory::BootInfoFrameAllocator;
 
+    // инит VGA
     let framebuffer = boot_info.framebuffer.take();
     kernel::vga_buffer::init(framebuffer);
-    println!("VGA initialized ");
+    println!("VGA initialized");
 
+    // инит остальной залупы
     kernel::init();
-    //kernel::gdt::init();
-    //kernel::interrupts::init();
 
+    println!("APIC timer active. System idle loop.");
 
     let phys_mem_offset = match boot_info.physical_memory_offset {
         Optional::Some(offset) => VirtAddr::new(offset),
@@ -42,25 +38,31 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
     };
 
     let mut mapper = unsafe { memory::init(phys_mem_offset) };
+
     let memory_map: &'static MemoryRegions = &boot_info.memory_regions;
-    let mut frame_allocator = unsafe { BootInfoFrameAllocator::init(memory_map) };
+
+    let mut frame_allocator = unsafe {
+        BootInfoFrameAllocator::init(memory_map)
+    };
 
     let page = Page::containing_address(VirtAddr::new(0xdeadbeaf000));
+
     memory::create_example_mapping(page, &mut mapper, &mut frame_allocator);
 
     let page_ptr: *mut u64 = page.start_address().as_mut_ptr();
-    unsafe { page_ptr.offset(400).write_volatile(0xf021_f077_f065_f04e) };
+    unsafe { page_ptr.offset(400).write_volatile(0x_f021_f077_f065_f04e) };
 
     allocator::init_heap(&mut mapper, &mut frame_allocator)
-        .expect("init_heap naeb ");
+        .expect("init_heap naeb");
 
-    println!("Welcome to Sosaltix2 ");
+    // запуск задач (пока выключил смысла с нерабочими прерываниями в них нет)
 
-    let mut executor = Executor::new();
-    executor.spawn(Task::new(shell::run_shell())); 
+    /*let mut executor = Executor::new();
+    executor.spawn(Task::new(shell::run_shell()));
     executor.run();
-    // executor.run() -> !, поэтому hlt_loop() никогда не выполнится.
-    // Убрано, чтобы убрать warning: unreachable_statement
+    */
+
+    kernel::hlt_loop();
 }
 
 #[cfg(not(test))]

@@ -25,7 +25,6 @@ pub enum QemuExitCode {
 
 pub fn exit_qemu(exit_code: QemuExitCode) {
     use x86_64::instructions::port::Port;
-
     unsafe {
         let mut port = Port::new(0xf4);
         port.write(exit_code as u32);
@@ -33,7 +32,6 @@ pub fn exit_qemu(exit_code: QemuExitCode) {
 }
 
 use core::panic::PanicInfo;
-
 pub trait Testable {
     fn run(&self) -> ();
 }
@@ -41,8 +39,9 @@ pub trait Testable {
 pub fn init() {
     gdt::init();
     interrupts::init_idt();
-    unsafe { interrupts::PICS.lock().initialize() }; 
-    x86_64::instructions::interrupts::enable(); 
+    interrupts::init_apic();
+    x86_64::instructions::interrupts::enable();
+    interrupts::start_timer(100_000_00); 
 }
 
 pub fn hlt_loop() -> ! {
@@ -79,10 +78,8 @@ pub fn test_panic_handler(info: &PanicInfo) -> ! {
 
 #[cfg(test)]
 use bootloader_api::{entry_point, BootInfo};
-
 #[cfg(test)]
 entry_point!(test_kernel_main);
-
 #[cfg(test)]
 fn test_kernel_main(_boot_info: &'static mut BootInfo) -> ! {
     init();
@@ -95,4 +92,3 @@ fn test_kernel_main(_boot_info: &'static mut BootInfo) -> ! {
 fn panic(info: &PanicInfo) -> ! {
     test_panic_handler(info)
 }
-

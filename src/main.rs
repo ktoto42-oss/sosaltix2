@@ -4,7 +4,6 @@ use std::process::{Command, exit};
 
 fn main() {
     let uefi_path = env!("UEFI_PATH");
-    //let bios_path = env!("BIOS_PATH");
 
     let args: Vec<String> = env::args().collect();
     let prog = &args[0];
@@ -47,6 +46,7 @@ fn main() {
             "if=pflash,format=raw,unit=1,file={},snapshot=on",
             vars.display()
         ));
+        cmd.arg("-cpu").arg("qemu64,+x2apic");
     }
 
     let mut child = cmd.spawn().expect("failed to start qemu-system-x86_64");
