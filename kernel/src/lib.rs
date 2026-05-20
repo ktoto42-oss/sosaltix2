@@ -5,6 +5,7 @@
 #![reexport_test_harness_main = "test_main"]
 #![feature(abi_x86_interrupt)]
 extern crate alloc;
+use x86_64::VirtAddr;
 
 pub mod serial;
 pub mod vga_buffer;
@@ -36,12 +37,12 @@ pub trait Testable {
     fn run(&self) -> ();
 }
 
-pub fn init() {
+pub fn init(phys_mem_offset: VirtAddr) {
     gdt::init();
     interrupts::init_idt();
-    interrupts::init_apic();
-    x86_64::instructions::interrupts::enable();
-    interrupts::start_timer(100_000_00); 
+    interrupts::disable_legacy_pic();
+    interrupts::init_apic(phys_mem_offset);
+    interrupts::init_ioapic(phys_mem_offset);
 }
 
 pub fn hlt_loop() -> ! {

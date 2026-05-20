@@ -1,2 +1,4 @@
 /target
 /kernel/target
+qemu.log
+qemu.txt
