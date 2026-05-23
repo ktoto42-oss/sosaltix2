@@ -27,7 +27,7 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
 
     // инит VGA
     let framebuffer = boot_info.framebuffer.take();
-    kernel::vga_buffer::init(framebuffer);
+    kernel::terminal::init(framebuffer);
     println!("Welcome to Sosaltix2");
 
     // инит остальной залупы

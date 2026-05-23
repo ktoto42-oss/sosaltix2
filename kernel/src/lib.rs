@@ -8,7 +8,7 @@ extern crate alloc;
 use x86_64::VirtAddr;
 
 pub mod serial;
-pub mod vga_buffer;
+pub mod terminal;
 pub mod interrupts;
 pub mod gdt;
 pub mod memory;

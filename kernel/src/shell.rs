@@ -1,5 +1,5 @@
 use alloc::vec::Vec;
-use crate::{print, println};
+use crate::{print, println, serial_print};
 use conquer_once::spin::OnceCell;
 use core::{
     pin::Pin,
@@ -10,7 +10,7 @@ use futures_util::{
     stream::{Stream, StreamExt},
     task::AtomicWaker,
 };
-use pc_keyboard::{layouts, DecodedKey, HandleControl, Keyboard, ScancodeSet1};
+use pc_keyboard::{layouts, DecodedKey, HandleControl, Keyboard, ScancodeSet1, KeyCode};
 
 // очередь сканкодов
 static SCANCODE_QUEUE: OnceCell<ArrayQueue<u8>> = OnceCell::uninit();
@@ -66,7 +66,8 @@ pub fn add_scancode(scancode: u8) {
 
 // состояние строки
 static mut LINE_BUFFER: [u8; 256] = [0; 256];
-static mut BUFFER_POS: usize = 0;
+static mut BUFFER_LEN: usize = 0;
+static mut CURSOR_POS: usize = 0;
 
 // макс. размер строки
 const BUFFER_CAPACITY: usize = 256;
@@ -87,43 +88,62 @@ pub async fn run_shell() {
                 match key {
                     DecodedKey::Unicode(character) => {
                         match character {
-                            // переход на новою строку
                             '\n' | '\r' => {
                                 println!();
                                 process_command().await;
                                 print!("> ");
                             }
-                            // удаление (визуально не работает)
-                            '\x08' | '\x7F' => { // backspace или delete
+                            '\x08' | '\x7F' => { // backspace
                                 unsafe {
-                                    let pos_ptr: *const usize = &raw const BUFFER_POS;
-                                    if *pos_ptr > 0 {
-                                        let pos_mut: *mut usize = &raw mut BUFFER_POS;
-                                        *pos_mut -= 1;
+                                    if CURSOR_POS > 0 {
+                                        CURSOR_POS -= 1;
+                                        // в полноценном readline здесь нужно сдвигать весь массив влево но мне лень
                                         print!("\x08 \x08");
+                                        
+                                        // если стирает с конца уменьшает длину буфера
+                                        if CURSOR_POS == BUFFER_LEN - 1 {
+                                            BUFFER_LEN -= 1;
+                                        }
                                     }
                                 }
                             }
-                            // вывод
                             _ => {
                                 print!("{}", character);
                                 unsafe {
-                                    let pos_ptr: *const usize = &raw const BUFFER_POS;
-                                    let current_pos = *pos_ptr;
-                                    
-                                    if current_pos < BUFFER_CAPACITY {
-                                        let buf_ptr = (&raw mut LINE_BUFFER).cast::<u8>();
-                                        *buf_ptr.add(current_pos) = character as u8;
+                                    if CURSOR_POS < BUFFER_CAPACITY {
+                                        LINE_BUFFER[CURSOR_POS] = character as u8;
+                                        CURSOR_POS += 1;
                                         
-                                        let pos_mut: *mut usize = &raw mut BUFFER_POS;
-                                        *pos_mut = current_pos + 1;
+                                        // если пишет за пределами старой длины увеличиваем длину
+                                        if CURSOR_POS > BUFFER_LEN {
+                                            BUFFER_LEN = CURSOR_POS;
+                                        }
                                     }
                                 }
                             }
                         }
                     }
-                    // стрелочки мб доделаю
-                    DecodedKey::RawKey(_key) => {}
+                    DecodedKey::RawKey(raw_key) => {
+                        match raw_key {
+                            KeyCode::ArrowLeft => {
+                                unsafe {
+                                    if CURSOR_POS > 0 {
+                                        CURSOR_POS -= 1;
+                                        print!("\x1B[D"); // отправляет ansi код терминалу (влево)
+                                    }
+                                }
+                            }
+                            KeyCode::ArrowRight => {
+                                unsafe {
+                                    if CURSOR_POS < BUFFER_LEN {
+                                        CURSOR_POS += 1;
+                                        print!("\x1B[C"); // отправляет ansi код терминалу (вправо)
+                                    }
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
                 }
             }
         }
@@ -133,20 +153,19 @@ pub async fn run_shell() {
 async fn process_command() {
     // получение строки из буфера
     let cmd = unsafe {
-        let pos = *(&raw const BUFFER_POS);
-        if pos == 0 {
+        if BUFFER_LEN == 0 {
             ""
         } else {
             let buf_ptr = &raw const LINE_BUFFER;
-            let slice = core::slice::from_raw_parts(buf_ptr.cast::<u8>(), pos);
+            let slice = core::slice::from_raw_parts(buf_ptr.cast::<u8>(), BUFFER_LEN);
             core::str::from_utf8(slice).unwrap_or("").trim()
         }
     };
     
     // очистка буфера
     unsafe {
-        let pos_mut: *mut usize = &raw mut BUFFER_POS;
-        *pos_mut = 0;
+        BUFFER_LEN = 0;
+        CURSOR_POS = 0;
     }
 
     if cmd.is_empty() {
@@ -160,16 +179,13 @@ async fn process_command() {
 
     match command {
         "echo" => {
-            println!("{}", args);
+            println!("{args}");
         }
         "help" => {
-            println!("Available commands: echo, help, clear");
+            println!("Available commands: echo, help, clear")
         }
         "clear" => {
-            // костыль ебучий
-            for _ in 0..25 {
-                println!();
-            }
+            crate::terminal::clear_screen();
         }
         _ => {
             println!("Unknown command: '{}'", command);

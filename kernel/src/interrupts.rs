@@ -4,6 +4,14 @@ use crate::{println, print, gdt};
 use lazy_static::lazy_static;
 use x2apic::lapic::{LocalApicBuilder, xapic_base};
 use x86_64::instructions::port::Port;
+use crate::{serial_print, serial_println};
+use core::sync::atomic::{AtomicU64, Ordering};
+
+static APIC_TICKS: AtomicU64 = AtomicU64::new(0);
+
+pub fn get_uptime_ticks() -> u64 {
+    APIC_TICKS.load(Ordering::Relaxed)
+}
 
 // векторы прерывание > 32 так приказал аллах
 pub const APIC_TIMER_VECTOR: u8 = 32;
@@ -47,15 +55,15 @@ pub fn disable_legacy_pic() {
     }
 }
 
-/// инит lapic
+// инит lapic
 pub fn init_apic(phys_mem_offset: VirtAddr) {
     // получение физ адреса
     let apic_phys_base = unsafe { xapic_base() };
-    //println!("APIC physical base: {:#x}", apic_phys_base);
+    serial_println!("APIC physical base: {:#x}", apic_phys_base);
 
     // преобразование в виртуальный
     let apic_virt_base = VirtAddr::new(phys_mem_offset.as_u64() + apic_phys_base);
-    //println!("APIC virtual base: {:#x}", apic_virt_base.as_u64());
+    serial_println!("APIC virtual base: {:#x}", apic_virt_base.as_u64());
 
     // создание lapic
     let mut lapic = LocalApicBuilder::new()
@@ -74,7 +82,7 @@ pub fn init_apic(phys_mem_offset: VirtAddr) {
         lapic.set_timer_mode(x2apic::lapic::TimerMode::Periodic);
         LAPIC = Some(lapic);
     }
-    //println!("Local APIC enabled.");
+    serial_println!("Local APIC enabled.");
 }
 
 pub fn init_ioapic(phys_mem_offset: VirtAddr) {
@@ -99,7 +107,7 @@ pub fn init_ioapic(phys_mem_offset: VirtAddr) {
         write_ioapic(ioapic_virt_base, high_index, 0);
         write_ioapic(ioapic_virt_base, low_index, vector);
     }
-    //println!("I/O APIC initialized (Keyboard IRQ1 -> Vector {})", KEYBOARD_VECTOR);
+    serial_println!("I/O APIC initialized (Keyboard IRQ1 -> Vector {})", KEYBOARD_VECTOR);
 }
 
 // обработчики прерываний
@@ -127,12 +135,12 @@ extern "x86-interrupt" fn gpf_handler(
 }
 
 extern "x86-interrupt" fn apic_timer_handler(stack_frame: InterruptStackFrame) {
-    //println!("APIC Timer interrupt")
     unsafe {
         if let Some(ref mut lapic) = LAPIC {
             lapic.end_of_interrupt();
         }
     }
+    //serial_print!(".");
 }
 
 extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStackFrame) {

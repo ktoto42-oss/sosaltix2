@@ -46,10 +46,6 @@ fn main() {
             "if=pflash,format=raw,unit=1,file={},snapshot=on",
             vars.display()
         ));
-        cmd.arg("-cpu").arg("qemu64,+x2apic");
-        cmd.arg("-d").arg("cpu_reset,int");
-        
-        cmd.arg("-D").arg("qemu.log");
     }
 
     let mut child = cmd.spawn().expect("failed to start qemu-system-x86_64");
