@@ -16,6 +16,7 @@ pub mod allocator;
 pub mod task;
 pub mod shell;
 pub mod font;
+pub mod commands;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]

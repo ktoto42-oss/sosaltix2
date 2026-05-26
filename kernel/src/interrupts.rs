@@ -86,7 +86,7 @@ pub fn init_apic(phys_mem_offset: VirtAddr) {
 }
 
 pub fn init_ioapic(phys_mem_offset: VirtAddr) {
-    // адекса iopic
+    // адреса iopic
     let ioapic_phys_base = 0xFEC00000;
     let ioapic_virt_base = phys_mem_offset.as_u64() + ioapic_phys_base;
 

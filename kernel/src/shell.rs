@@ -96,17 +96,36 @@ pub async fn run_shell() {
                             '\x08' | '\x7F' => { // backspace
                                 unsafe {
                                     if CURSOR_POS > 0 {
-                                        CURSOR_POS -= 1;
-                                        // в полноценном readline здесь нужно сдвигать весь массив влево но мне лень
-                                        print!("\x08 \x08");
-                                        
-                                        // если стирает с конца уменьшает длину буфера
-                                        if CURSOR_POS == BUFFER_LEN - 1 {
-                                            BUFFER_LEN -= 1;
+                                        // сдвигает символы в буфере памяти влево
+                                        let idx = CURSOR_POS - 1;
+                                        for i in idx..(BUFFER_LEN - 1) {
+                                        LINE_BUFFER[i] = LINE_BUFFER[i + 1];
                                         }
+                                    BUFFER_LEN -= 1;
+                                    CURSOR_POS -= 1;
+
+                                    // обновление отображения на экране
+                                    // сдвигает курсор терминала визуально влево на место удаленного символа
+                                    print!("\x08"); 
+
+                                    // печатает обновленный остаток строки
+                                    let buf_ptr = &raw const LINE_BUFFER;
+                                    let slice = core::slice::from_raw_parts(buf_ptr.cast::<u8>(), BUFFER_LEN);
+                                    if let Ok(tail) = core::str::from_utf8(&slice[CURSOR_POS..]) {
+                                        print!("{}", tail);
+                                    }
+
+                                    // затирает старый символ который остался в самом конце и возвращаем курсор
+                                    print!(" \x08");
+
+                                    // возвращает курсор терминала обратно в позицию CURSOR_POS
+                                    let shift_back = BUFFER_LEN - CURSOR_POS;
+                                    if shift_back > 0 {
+                                        print!("\x1B[{}D", shift_back); // ANSI-код: влево на N символов
                                     }
                                 }
                             }
+                        }
                             _ => {
                                 print!("{}", character);
                                 unsafe {
@@ -179,13 +198,22 @@ async fn process_command() {
 
     match command {
         "echo" => {
-            println!("{args}");
+            crate::commands::base::echo(args);
         }
         "help" => {
-            println!("Available commands: echo, help, clear")
+            crate::commands::base::help();
         }
         "clear" => {
             crate::terminal::clear_screen();
+        }
+        "fetch" => {
+            crate::commands::fetch::fetch();
+        }
+        "reboot" => {
+            crate::commands::power::reboot();
+        }
+        "poweroff" => {
+            crate::commands::power::poweroff();
         }
         _ => {
             println!("Unknown command: '{}'", command);

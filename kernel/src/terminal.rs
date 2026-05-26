@@ -143,7 +143,7 @@ impl Terminal {
         match self.ansi_state {
             AnsiState::Normal => {
                 match byte {
-                    0x1B => self.ansi_state = AnsiState::Escaped, // Начало ansi (esc)
+                    0x1B => self.ansi_state = AnsiState::Escaped, // начало ansi (esc)
                     b'\n' => self.new_line(),
                     b'\r' => self.cursor_x = 0,
                     b'\x08' => { // backspace
@@ -213,6 +213,34 @@ impl Terminal {
             self.write_byte(byte);
         }
     }
+
+    fn toggle_cursor(&mut self) {
+        let base_x = self.cursor_x * CHAR_W;
+        let base_y = self.cursor_y * CHAR_H;
+
+        for row in 0..CHAR_H {
+            for col in 0..CHAR_W {
+                let x = base_x + col;
+                let y = base_y + row;
+                if x >= self.info.width as usize || y >= self.info.height as usize { continue; }
+            
+                let offset = (y * self.info.stride as usize + x) * 4;
+                if offset + 4 <= self.buffer.len() {
+                    self.buffer[offset]     = !self.buffer[offset];
+                    self.buffer[offset + 1] = !self.buffer[offset + 1];
+                    self.buffer[offset + 2] = !self.buffer[offset + 2];
+                }
+            }
+        }
+    }
+
+    pub fn show_cursor(&mut self) {
+        self.toggle_cursor();
+    }
+
+    pub fn hide_cursor(&mut self) {
+        self.toggle_cursor();
+    }
 }
 
 impl fmt::Write for Terminal {
@@ -229,7 +257,8 @@ pub fn init(framebuffer: Option<FrameBuffer>) {
     if let Some(fb) = framebuffer {
         let info = fb.info();
         let buffer = fb.into_buffer();
-        let term = Terminal::new(buffer, info);
+        let mut term = Terminal::new(buffer, info);
+        term.show_cursor();
         *TERMINAL.lock() = Some(term);
     }
 }
@@ -238,6 +267,7 @@ pub fn clear_screen() {
     x86_64::instructions::interrupts::without_interrupts(|| {
         if let Some(term) = &mut *TERMINAL.lock() {
             term.clear_screen();
+            term.show_cursor();
         }
     });
 }
@@ -245,11 +275,19 @@ pub fn clear_screen() {
 #[doc(hidden)]
 pub fn _print(args: fmt::Arguments) {
     use core::fmt::Write;
-    // отключает прерывания на время вывода чтобы избежать deadlock
-    // если прерывание попытается что-то напечатать
     x86_64::instructions::interrupts::without_interrupts(|| {
         if let Some(term) = &mut *TERMINAL.lock() {
+            term.hide_cursor();
             let _ = term.write_fmt(args);
+            term.show_cursor();
+        }
+    });
+}
+
+pub fn write_pixel_global(x: usize, y: usize, color_rgb: u32) {
+    x86_64::instructions::interrupts::without_interrupts(|| {
+        if let Some(term) = &mut *TERMINAL.lock() {
+            term.write_pixel(x, y, color_rgb);
         }
     });
 }
