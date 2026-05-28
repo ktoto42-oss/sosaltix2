@@ -32,7 +32,7 @@ sudo pacman -S rustup
 rustup default nightly
 
 # Установка компонентов
-rustup component add rust-  **VGA текстовый режим**
+rustup component add rust-src
 rustup component add llvm-tools-preview
 
 # Установка QEMU (Arch Linux)
