@@ -27,9 +27,7 @@ pub fn poweroff() -> ! {
         
         let mut vbox_power = Port::<u16>::new(0x4004);
         vbox_power.write(0x3400);
-    }
-
-    crate::println!("\x1B[91mSafe to power off your PC now.\x1B[0m");
+    }   
     
     loop {
         x86_64::instructions::hlt();

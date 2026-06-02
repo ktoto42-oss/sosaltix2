@@ -124,4 +124,20 @@ unsafe impl FrameAllocator<Size4KiB> for BootInfoFrameAllocator {
     }
 }
 
+use core::sync::atomic::{AtomicUsize, Ordering};
+
+static TOTAL_USABLE_MEMORY: AtomicUsize = AtomicUsize::new(0);
+
+pub fn init_total_memory(memory_map: &'static MemoryRegions) {
+    let total_bytes = memory_map.iter()
+        .filter(|r| r.kind == MemoryRegionKind::Usable)
+        .map(|r| r.end - r.start)
+        .sum::<u64>() as usize;
+    TOTAL_USABLE_MEMORY.store(total_bytes, Ordering::Relaxed);
+}
+
+pub fn total_memory() -> usize {
+    TOTAL_USABLE_MEMORY.load(Ordering::Relaxed)
+}
+
 

@@ -17,6 +17,7 @@ pub mod task;
 pub mod shell;
 pub mod font;
 pub mod commands;
+pub mod pci;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]

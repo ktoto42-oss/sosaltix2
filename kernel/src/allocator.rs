@@ -1,15 +1,11 @@
-pub mod bump;
-pub mod fixed_size_block;
-pub mod linked_list;
-use fixed_size_block::FixedSizeBlockAllocator;
+use buddy_system_allocator::LockedHeap;
 
 #[global_allocator]
-static ALLOCATOR: Locked<FixedSizeBlockAllocator> = Locked::new(
-    FixedSizeBlockAllocator::new());
+static ALLOCATOR: LockedHeap<32> = LockedHeap::empty();
 
 // размер heap
 pub const HEAP_START: usize = 0x_4444_4444_0000;
-pub const HEAP_SIZE: usize = 1000 * 1024; // 1000 kb
+pub const HEAP_SIZE: usize = 16 * 1024 * 1024; // 16 MB
 
 use x86_64::{
     structures::paging::{
@@ -35,9 +31,15 @@ pub fn init_heap(
             .allocate_frame()
             .ok_or(MapToError::FrameAllocationFailed)?;
         let flags = PageTableFlags::PRESENT | PageTableFlags::WRITABLE;
+        
         unsafe {
-            mapper.map_to(page, frame, flags, frame_allocator)?.flush()
+            mapper.map_to(page, frame, flags, frame_allocator)?.ignore();
         };
+    }
+
+    unsafe {
+        let (pt_frame, flags) = x86_64::registers::control::Cr3::read();
+        x86_64::registers::control::Cr3::write(pt_frame, flags);
     }
 
     unsafe {

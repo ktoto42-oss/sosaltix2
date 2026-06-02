@@ -106,7 +106,7 @@ pub async fn run_shell() {
 
                                     // обновление отображения на экране
                                     // сдвигает курсор терминала визуально влево на место удаленного символа
-                                    print!("\x08"); 
+                                    print!("\x08");
 
                                     // печатает обновленный остаток строки
                                     let buf_ptr = &raw const LINE_BUFFER;
@@ -149,6 +149,7 @@ pub async fn run_shell() {
                                     if CURSOR_POS > 0 {
                                         CURSOR_POS -= 1;
                                         print!("\x1B[D"); // отправляет ansi код терминалу (влево)
+                                        crate::terminal::redraw();
                                     }
                                 }
                             }
@@ -157,6 +158,7 @@ pub async fn run_shell() {
                                     if CURSOR_POS < BUFFER_LEN {
                                         CURSOR_POS += 1;
                                         print!("\x1B[C"); // отправляет ansi код терминалу (вправо)
+                                        crate::terminal::redraw();
                                     }
                                 }
                             }

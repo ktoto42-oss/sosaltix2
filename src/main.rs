@@ -14,7 +14,6 @@ fn main() {
         Some(ref s) if s == "-h" || s == "--help" => {
             println!("Usage: {prog} [uefi|bios]");
             println!("  uefi  - boot using OVMF (UEFI)");
-            println!("  bios  - boot using legacy BIOS");
             exit(0);
         }
         _ => {
@@ -24,6 +23,16 @@ fn main() {
     };
 
     let mut cmd = Command::new("qemu-system-x86_64");
+    
+    // --- ВАЖНЫЕ ИЗМЕНЕНИЯ ДЛЯ РАБОТЫ PCI ECAM / VIRTIO ---
+    // 1. Включаем чипсет Q35 (он аппаратно поддерживает ECAM по адресу 0xB000_0000)
+    cmd.arg("-machine").arg("q35");
+    
+    // 2. Добавляем современную видеокарту VirtIO как честное PCI-устройство
+    cmd.arg("-device").arg("virtio-gpu-pci");
+    // -----------------------------------------------------
+
+    cmd.arg("-enable-kvm");
     cmd.arg("-serial").arg("mon:stdio");
     cmd.arg("-display").arg("gtk");
     cmd.arg("-device")
