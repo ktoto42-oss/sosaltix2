@@ -18,6 +18,7 @@ pub mod shell;
 pub mod font;
 pub mod commands;
 pub mod pci;
+pub mod virtio;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]

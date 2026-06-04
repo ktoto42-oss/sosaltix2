@@ -48,6 +48,8 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
             "Found VirtIO GPU at [{:02x}:{:02x}.{}] (Device ID: {:#06x})",
             gpu.bus, gpu.slot, gpu.func, gpu.device_id
         );
+
+        kernel::virtio::test_graphics(&gpu, &mut mapper, &mut frame_allocator);
         
     } else {
         println!("VirtIO GPU not found!");

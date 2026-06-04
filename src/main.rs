@@ -24,13 +24,9 @@ fn main() {
 
     let mut cmd = Command::new("qemu-system-x86_64");
     
-    // --- ВАЖНЫЕ ИЗМЕНЕНИЯ ДЛЯ РАБОТЫ PCI ECAM / VIRTIO ---
-    // 1. Включаем чипсет Q35 (он аппаратно поддерживает ECAM по адресу 0xB000_0000)
     cmd.arg("-machine").arg("q35");
-    
-    // 2. Добавляем современную видеокарту VirtIO как честное PCI-устройство
-    cmd.arg("-device").arg("virtio-gpu-pci");
-    // -----------------------------------------------------
+
+    cmd.arg("-vga").arg("virtio");
 
     cmd.arg("-enable-kvm");
     cmd.arg("-serial").arg("mon:stdio");

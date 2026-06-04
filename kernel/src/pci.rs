@@ -12,7 +12,7 @@ pub struct PciDevice {
     pub device_id: u16,
 }
 
-fn pci_config_read_u32(bus: u8, slot: u8, func: u8, offset: u8) -> u32 {
+pub fn pci_config_read_u32(bus: u8, slot: u8, func: u8, offset: u8) -> u32 {
     let address = ((bus as u32) << 16)
         | ((slot as u32) << 11)
         | ((func as u32) << 8)
@@ -25,6 +25,22 @@ fn pci_config_read_u32(bus: u8, slot: u8, func: u8, offset: u8) -> u32 {
     unsafe {
         config_address.write(address);
         config_data.read()
+    }
+}
+
+pub fn pci_config_write_u32(bus: u8, slot: u8, func: u8, offset: u8, value: u32) {
+    let address = ((bus as u32) << 16)
+        | ((slot as u32) << 11)
+        | ((func as u32) << 8)
+        | ((offset as u32) & 0xFC)
+        | 0x8000_0000;
+
+    let mut config_address = Port::<u32>::new(0xCF8);
+    let mut config_data = Port::<u32>::new(0xCFC);
+
+    unsafe {
+        config_address.write(address);
+        config_data.write(value);
     }
 }
 
