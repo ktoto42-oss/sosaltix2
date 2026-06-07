@@ -49,10 +49,20 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
             gpu.bus, gpu.slot, gpu.func, gpu.device_id
         );
 
-        kernel::virtio::test_graphics(&gpu, &mut mapper, &mut frame_allocator);
+        //kernel::virtio::test_graphics(&gpu, &mut mapper, &mut frame_allocator);
         
     } else {
         println!("VirtIO GPU not found!");
+    }
+
+    if let Some(blk_device) = kernel::pci::find_virtio_blk() {
+        println!(
+            "Found VirtIO Block Device at [{:02x}:{:02x}.{}]",
+            blk_device.bus, blk_device.slot, blk_device.func
+        );
+        kernel::virtio::init_disk(&blk_device, &mut mapper, &mut frame_allocator);
+    } else {
+        println!("VirtIO Block Device not found!");
     }
 
     let mut executor = Executor::new();

@@ -117,3 +117,38 @@ pub fn scan_bus() {
         }
     }
 }
+
+pub const VIRTIO_BLK_DEVICE_ID: u16 = 0x1042;
+
+pub fn find_virtio_blk() -> Option<PciDevice> {
+    for bus in 0..=255 {
+        for slot in 0..32 {
+            let vendor_id = get_vendor_id(bus, slot, 0);
+            if vendor_id == 0xFFFF {
+                continue;
+            }
+
+            let header_type = get_header_type(bus, slot, 0);
+            let num_functions = if (header_type & 0x80) != 0 { 8 } else { 1 };
+
+            for func in 0..num_functions {
+                let v_id = get_vendor_id(bus, slot, func);
+                if v_id == VIRTIO_VENDOR_ID {
+                    let d_id = get_device_id(bus, slot, func);
+                    let (class, _) = get_class_subclass(bus, slot, func);
+
+                    if d_id == VIRTIO_BLK_DEVICE_ID || d_id == 0x1001 || (d_id >= 0x1000 && d_id <= 0x103F && class == 0x01) {
+                        return Some(PciDevice {
+                            bus,
+                            slot,
+                            func,
+                            vendor_id: v_id,
+                            device_id: d_id,
+                        });
+                    }
+                }
+            }
+        }
+    }
+    None
+}

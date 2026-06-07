@@ -1,11 +1,11 @@
-use super::{Task, TaskId};
+use super::{Task, TaskId, SimpleQueue};
 use alloc::{collections::BTreeMap, sync::Arc};
 use core::task::Waker;
-use crossbeam_queue::ArrayQueue;
+use spin::Mutex;
 
 pub struct Executor {
     tasks: BTreeMap<TaskId, Task>,
-    task_queue: Arc<ArrayQueue<TaskId>>,
+    task_queue: Arc<Mutex<SimpleQueue<TaskId, 100>>>,
     waker_cache: BTreeMap<TaskId, Waker>,
 }
 
@@ -13,7 +13,7 @@ impl Executor {
     pub fn new() -> Self {
         Executor {
             tasks: BTreeMap::new(),
-            task_queue: Arc::new(ArrayQueue::new(100)),
+            task_queue: Arc::new(Mutex::new(SimpleQueue::new())),
             waker_cache: BTreeMap::new(),
         }
     }
@@ -23,7 +23,7 @@ impl Executor {
         if self.tasks.insert(task.id, task).is_some() {
             panic!("task with same ID already in tasks");
         }
-        self.task_queue.push(task_id).expect("queue full");
+        self.task_queue.lock().push(task_id).expect("queue full");
     }
 }
 
@@ -31,17 +31,16 @@ use core::task::{Context, Poll};
 
 impl Executor {
     fn run_ready_tasks(&mut self) {
-        // деструктуризация self
         let Self {
             tasks,
             task_queue,
             waker_cache,
         } = self;
 
-        while let Some(task_id) = task_queue.pop() {
+        while let Some(task_id) = task_queue.lock().pop() {
             let task = match tasks.get_mut(&task_id) {
                 Some(task) => task,
-                None => continue, // task больше нету 
+                None => continue,
             };
             let waker = waker_cache
                 .entry(task_id)
@@ -49,7 +48,6 @@ impl Executor {
             let mut context = Context::from_waker(waker);
             match task.poll(&mut context) {
                 Poll::Ready(()) => {
-                    // задача готова => удалить ее и кеширумый waker
                     tasks.remove(&task_id);
                     waker_cache.remove(&task_id);
                 }
@@ -69,7 +67,7 @@ impl Executor {
         use x86_64::instructions::interrupts::{self, enable_and_hlt};
 
         interrupts::disable();
-        if self.task_queue.is_empty() {
+        if self.task_queue.lock().is_empty() {
             enable_and_hlt();
         } else {
             interrupts::enable();
@@ -79,15 +77,15 @@ impl Executor {
 
 struct TaskWaker {
     task_id: TaskId,
-    task_queue: Arc<ArrayQueue<TaskId>>,
+    task_queue: Arc<Mutex<SimpleQueue<TaskId, 100>>>,
 }
 
 impl TaskWaker {
     fn wake_task(&self) {
-        self.task_queue.push(self.task_id).expect("task_queue full");
+        let _ = self.task_queue.lock().push(self.task_id);
     }
 
-    fn new(task_id: TaskId, task_queue: Arc<ArrayQueue<TaskId>>) -> Waker {
+    fn new(task_id: TaskId, task_queue: Arc<Mutex<SimpleQueue<TaskId, 100>>>) -> Waker {
         Waker::from(Arc::new(TaskWaker {
             task_id,
             task_queue,

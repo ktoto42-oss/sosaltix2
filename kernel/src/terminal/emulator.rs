@@ -30,7 +30,7 @@ pub struct Terminal {
 }
 
 impl Terminal {
-    pub fn new(mut display: GopDisplay) -> Self {
+    pub fn new(display: GopDisplay) -> Self {
         let cols = display.info.width as usize / CHAR_W;
         let rows = display.info.height as usize / CHAR_H;
         

@@ -1,3 +1,4 @@
+use virtio_drivers::device::blk::VirtIOBlk;
 use virtio_drivers::{BufferDirection, Hal, PhysAddr, PAGE_SIZE};
 use virtio_drivers::transport::pci::{
     PciTransport,
@@ -7,6 +8,8 @@ use virtio_drivers::device::gpu::VirtIOGpu;
 use core::ptr::NonNull;
 use alloc::alloc::{alloc_zeroed, dealloc, Layout};
 use x86_64::VirtAddr;
+use spin::Mutex;
+use crate::println;
 
 const PHYS_MEM_OFFSET: u64 = 0xffff_8000_0000_0000;
 
@@ -70,7 +73,7 @@ pub fn test_graphics(
     mapper: &mut x86_64::structures::paging::OffsetPageTable,
     frame_allocator: &mut impl x86_64::structures::paging::FrameAllocator<x86_64::structures::paging::Size4KiB>,
 ) {
-    crate::println!("Initializing VirtIO GPU driver via custom Port IO CAM...");
+    println!("Initializing VirtIO GPU driver via custom Port IO CAM...");
 
     for i in 0..6 {
         let offset = 0x10 + (i * 4);
@@ -87,7 +90,7 @@ pub fn test_graphics(
             }
             
             if phys_addr != 0 {
-                crate::println!("Pre-mapping PCI BAR{} at physical address {:#x}", i, phys_addr);
+                println!("Pre-mapping PCI BAR{} at physical address {:#x}", i, phys_addr);
                 map_mmio_range(phys_addr, 0x0100_0000, mapper, frame_allocator);
             }
         }
@@ -108,10 +111,10 @@ pub fn test_graphics(
     let mut gpu = VirtIOGpu::<SosaltixHal, _>::new(transport)
         .expect("Failed to initialize VirtIO GPU device");
 
-    crate::println!("VirtIO GPU initialized successfully! Setting up framebuffer...");
+    println!("VirtIO GPU initialized successfully! Setting up framebuffer...");
 
     let (width, height) = gpu.resolution().unwrap();
-    crate::println!("VirtIO GPU Screen Resolution: {}x{}", width, height);
+    println!("VirtIO GPU Screen Resolution: {}x{}", width, height);
 
     {
         let fb = gpu.setup_framebuffer()
@@ -132,7 +135,7 @@ pub fn test_graphics(
 
     gpu.flush().expect("Failed to flush GPU framebuffer to screen");
 
-    crate::println!("Graphics test finished rendering.");
+    println!("Graphics test finished rendering.");
 }
 
 use x86_64::structures::paging::{Page, PhysFrame, Mapper, Size4KiB, FrameAllocator, PageTableFlags, Translate};
@@ -167,4 +170,67 @@ pub fn map_mmio_range(
             }
         }
     }
+}
+
+pub type BlockDevice = VirtIOBlk<SosaltixHal, PciTransport>;
+
+pub static DISK: Mutex<Option<BlockDevice>> = Mutex::new(None);
+
+pub fn init_disk(
+    pci_device: &crate::pci::PciDevice,
+    mapper: &mut x86_64::structures::paging::OffsetPageTable,
+    frame_allocator: &mut impl x86_64::structures::paging::FrameAllocator<x86_64::structures::paging::Size4KiB>,
+) {
+    println!("Initializing VirtIO Block driver...");
+
+    for i in 0..6 {
+        let offset = 0x10 + (i * 4);
+        let bar = crate::pci::pci_config_read_u32(pci_device.bus, pci_device.slot, pci_device.func, offset);
+        if bar == 0 { continue; }
+        
+        if bar & 1 == 0 {
+            let is_64bit = (bar & 0x6) == 0x4;
+            let mut phys_addr = (bar & 0xFFFF_FFF0) as u64;
+            
+            if is_64bit && i < 5 {
+                let next_bar = crate::pci::pci_config_read_u32(pci_device.bus, pci_device.slot, pci_device.func, offset + 4);
+                phys_addr |= (next_bar as u64) << 32;
+            }
+            
+            if phys_addr != 0 {
+                println!("Pre-mapping PCI BAR{} for Block Device at physical address {:#x}", i, phys_addr);
+                map_mmio_range(phys_addr, 0x0100_0000, mapper, frame_allocator);
+            }
+        }
+    }
+
+    let cam = PortIoCam;
+    let mut pci_root = PciRoot::new(cam);
+
+    let device_function = DeviceFunction {
+        bus: pci_device.bus,
+        device: pci_device.slot,
+        function: pci_device.func,
+    };
+
+    let transport = PciTransport::new::<SosaltixHal, _>(&mut pci_root, device_function)
+        .expect("Failed to create VirtIO PCI transport for Block Device");
+
+    let mut blk = VirtIOBlk::<SosaltixHal, _>::new(transport)
+        .expect("Failed to initialize VirtIO Block device");
+
+    println!("VirtIO Block device initialized! Capacity: {} sectors", blk.capacity());
+
+    let mut buffer = [0u8; 512];
+    
+    blk.read_blocks(0, &mut buffer).expect("Failed to read sector 0");
+    println!("Sector 0 read test success! First 16 bytes: {:x?}", &buffer[0..16]);
+
+    buffer[0] = 0xDE;
+    buffer[1] = 0xAD;
+    blk.write_blocks(0, &buffer).expect("Failed to write sector 0");
+    println!("Sector 0 write test success!");
+
+    *DISK.lock() = Some(blk);
+    println!("VirtIO Block device saved to global DISK state.");
 }
