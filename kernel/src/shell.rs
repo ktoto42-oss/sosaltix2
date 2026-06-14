@@ -65,15 +65,23 @@ pub enum Key {
     Char(char),
     ArrowLeft,
     ArrowRight,
+    ShiftPressed,
+    ShiftReleased,
 }
 
-pub fn map_scancode(scancode: u8, extended: bool) -> Option<Key> {
+pub fn map_scancode(scancode: u8, extended: bool, shift: bool) -> Option<Key> {
     if extended {
         return match scancode {
             0x4B => Some(Key::ArrowLeft),
             0x4D => Some(Key::ArrowRight),
             _ => None,
         };
+    }
+
+    match scancode {
+        0x2A | 0x36 => return Some(Key::ShiftPressed),
+        0xAA | 0xB6 => return Some(Key::ShiftReleased),
+        _ => {}
     }
 
     if scancode >= 0x80 {
@@ -85,33 +93,56 @@ pub fn map_scancode(scancode: u8, extended: bool) -> Option<Key> {
         0x1C => Some(Key::Char('\n')),
         0x39 => Some(Key::Char(' ')),
         
-        0x02 => Some(Key::Char('1')), 0x03 => Some(Key::Char('2')),
-        0x04 => Some(Key::Char('3')), 0x05 => Some(Key::Char('4')),
-        0x06 => Some(Key::Char('5')), 0x07 => Some(Key::Char('6')),
-        0x08 => Some(Key::Char('7')), 0x09 => Some(Key::Char('8')),
-        0x0A => Some(Key::Char('9')), 0x0B => Some(Key::Char('0')),
-        0x0C => Some(Key::Char('-')), 0x0D => Some(Key::Char('=')),
+        0x02 => Some(Key::Char(if shift { '!' } else { '1' })),
+        0x03 => Some(Key::Char(if shift { '@' } else { '2' })),
+        0x04 => Some(Key::Char(if shift { '#' } else { '3' })),
+        0x05 => Some(Key::Char(if shift { '$' } else { '4' })),
+        0x06 => Some(Key::Char(if shift { '%' } else { '5' })),
+        0x07 => Some(Key::Char(if shift { '^' } else { '6' })),
+        0x08 => Some(Key::Char(if shift { '&' } else { '7' })),
+        0x09 => Some(Key::Char(if shift { '*' } else { '8' })),
+        0x0A => Some(Key::Char(if shift { '(' } else { '9' })),
+        0x0B => Some(Key::Char(if shift { ')' } else { '0' })),
+        0x0C => Some(Key::Char(if shift { '_' } else { '-' })),
+        0x0D => Some(Key::Char(if shift { '+' } else { '=' })),
         
-        0x10 => Some(Key::Char('q')), 0x11 => Some(Key::Char('w')),
-        0x12 => Some(Key::Char('e')), 0x13 => Some(Key::Char('r')),
-        0x14 => Some(Key::Char('t')), 0x15 => Some(Key::Char('y')),
-        0x16 => Some(Key::Char('u')), 0x17 => Some(Key::Char('i')),
-        0x18 => Some(Key::Char('o')), 0x19 => Some(Key::Char('p')),
-        0x1A => Some(Key::Char('[')), 0x1B => Some(Key::Char(']')),
+        0x10 => Some(Key::Char(if shift { 'Q' } else { 'q' })),
+        0x11 => Some(Key::Char(if shift { 'W' } else { 'w' })),
+        0x12 => Some(Key::Char(if shift { 'E' } else { 'e' })),
+        0x13 => Some(Key::Char(if shift { 'R' } else { 'r' })),
+        0x14 => Some(Key::Char(if shift { 'T' } else { 't' })),
+        0x15 => Some(Key::Char(if shift { 'Y' } else { 'y' })),
+        0x16 => Some(Key::Char(if shift { 'U' } else { 'u' })),
+        0x17 => Some(Key::Char(if shift { 'I' } else { 'i' })),
+        0x18 => Some(Key::Char(if shift { 'O' } else { 'o' })),
+        0x19 => Some(Key::Char(if shift { 'P' } else { 'p' })),
+        0x1A => Some(Key::Char(if shift { '{' } else { '[' })),
+        0x1B => Some(Key::Char(if shift { '}' } else { ']' })),
         
-        0x1E => Some(Key::Char('a')), 0x1F => Some(Key::Char('s')),
-        0x20 => Some(Key::Char('d')), 0x21 => Some(Key::Char('f')),
-        0x22 => Some(Key::Char('g')), 0x23 => Some(Key::Char('h')),
-        0x24 => Some(Key::Char('j')), 0x25 => Some(Key::Char('k')),
-        0x26 => Some(Key::Char('l')), 0x27 => Some(Key::Char(';')),
-        0x28 => Some(Key::Char('\'')), 0x29 => Some(Key::Char('`')),
-        0x2B => Some(Key::Char('\\')),
+        0x1E => Some(Key::Char(if shift { 'A' } else { 'a' })),
+        0x1F => Some(Key::Char(if shift { 'S' } else { 's' })),
+        0x20 => Some(Key::Char(if shift { 'D' } else { 'd' })),
+        0x21 => Some(Key::Char(if shift { 'F' } else { 'f' })),
+        0x22 => Some(Key::Char(if shift { 'G' } else { 'g' })),
+        0x23 => Some(Key::Char(if shift { 'H' } else { 'h' })),
+        0x24 => Some(Key::Char(if shift { 'J' } else { 'j' })),
+        0x25 => Some(Key::Char(if shift { 'K' } else { 'k' })),
+        0x26 => Some(Key::Char(if shift { 'L' } else { 'l' })),
+        0x27 => Some(Key::Char(if shift { ':' } else { ';' })),
+        0x28 => Some(Key::Char(if shift { '"' } else { '\'' })),
+        0x29 => Some(Key::Char(if shift { '~' } else { '`' })),
+        0x2B => Some(Key::Char(if shift { '|' } else { '\\' })),
         
-        0x2C => Some(Key::Char('z')), 0x2D => Some(Key::Char('x')),
-        0x2E => Some(Key::Char('c')), 0x2F => Some(Key::Char('v')),
-        0x30 => Some(Key::Char('b')), 0x31 => Some(Key::Char('n')),
-        0x32 => Some(Key::Char('m')), 0x33 => Some(Key::Char(',')),
-        0x34 => Some(Key::Char('.')), 0x35 => Some(Key::Char('/')),
+        0x2C => Some(Key::Char(if shift { 'Z' } else { 'z' })),
+        0x2D => Some(Key::Char(if shift { 'X' } else { 'x' })),
+        0x2E => Some(Key::Char(if shift { 'C' } else { 'c' })),
+        0x2F => Some(Key::Char(if shift { 'V' } else { 'v' })),
+        0x30 => Some(Key::Char(if shift { 'B' } else { 'b' })),
+        0x31 => Some(Key::Char(if shift { 'N' } else { 'n' })),
+        0x32 => Some(Key::Char(if shift { 'M' } else { 'm' })),
+        0x33 => Some(Key::Char(if shift { '<' } else { ',' })), 
+        0x34 => Some(Key::Char(if shift { '>' } else { '.' })), 
+        0x35 => Some(Key::Char(if shift { '?' } else { '/' })),
         
         _ => None,
     }
@@ -125,6 +156,7 @@ const BUFFER_CAPACITY: usize = 256;
 pub async fn run_shell() {
     let mut scancodes = ScancodeStream::new();
     let mut extended = false;
+    let mut shift = false;
 
     print!("> ");
 
@@ -134,11 +166,17 @@ pub async fn run_shell() {
             continue;
         }
 
-        let key = map_scancode(scancode, extended);
+        let key = map_scancode(scancode, extended, shift);
         extended = false;
 
         if let Some(key) = key {
             match key {
+                Key::ShiftPressed => {
+                    shift = true;
+                }
+                Key::ShiftReleased => {
+                    shift = false;
+                }
                 Key::Char(character) => {
                     match character {
                         '\n' | '\r' => {
@@ -146,7 +184,7 @@ pub async fn run_shell() {
                             process_command().await;
                             print!("> ");
                         }
-                        '\x08' | '\x7F' => { // backspace
+                        '\x08' | '\x7F' => {
                             unsafe {
                                 if CURSOR_POS > 0 {
                                     let idx = CURSOR_POS - 1;
@@ -243,7 +281,14 @@ async fn process_command() {
         "reboot" => { crate::commands::power::reboot(); }
         "poweroff" => { crate::commands::power::poweroff(); }
         "disk-status" => { crate::commands::base::print_disk_status(); }
-        "read-sector" => { crate::commands::base::read_sector_cmd(0); }
+        "read-sector" => { crate::commands::base::read_sector_cmd(args); }
+        "ls" => { crate::commands::base::ls_cmd(args); }
+        "cat" => { crate::commands::base::cat_cmd(args); }
+        "touch" => { crate::commands::base::touch_cmd(args); }
+        "mkdir" => { crate::commands::base::mkdir_cmd(args); }
+        "rm" => { crate::commands::base::rm_cmd(args); }
+        "read-sector" => { crate::commands::base::read_sector_cmd(args); }
+        "cd" => { crate::commands::base::cd_cmd(args); }
         _ => {
             println!("Unknown command: '{}'", command);
         }

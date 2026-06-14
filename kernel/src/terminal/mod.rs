@@ -63,19 +63,25 @@ pub fn write_pixel_global(x: usize, y: usize, color_rgb: u32) {
 #[macro_export]
 macro_rules! print {
     ($($arg:tt)*) => {
-        $crate::terminal::_print(format_args!($($arg)*));
-        $crate::terminal::redraw();
-    }
+        {
+            $crate::terminal::_print(format_args!($($arg)*));
+            $crate::terminal::redraw();
+        }
+    };
 }
 
 #[macro_export]
 macro_rules! println {
     () => {
-        $crate::print!("\n");
-        $crate::terminal::redraw();
+        {
+            $crate::print!("\n");
+            $crate::terminal::redraw();
+        }
     };
     ($($arg:tt)*) => {
-        $crate::print!("{}\n", format_args!($($arg)*));
-        $crate::terminal::redraw();
+        {
+            $crate::print!("{}\n", format_args!($($arg)*));
+            $crate::terminal::redraw();
+        }
     };
 }

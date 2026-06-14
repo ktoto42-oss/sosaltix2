@@ -40,6 +40,33 @@ fn main() {
             eprintln!("Failed to create disk image via qemu-img");
             exit(1);
         }
+
+        println!("Formatting {} to FAT32...", disk_path);
+        
+        let format_status = if cfg!(target_os = "linux") {
+            Command::new("mkfs.vfat")
+                .args(&["-F", "32", "-I", disk_path])
+                .status()
+        } else if cfg!(target_os = "macos") {
+            Command::new("newfs_msdos")
+                .args(&["-F", "32", disk_path])
+                .status()
+        } else {
+            eprintln!("Warning: Automatic FAT32 formatting is only supported on Linux and macOS.");
+            eprintln!("Please format {} manually.", disk_path);
+            exit(1);
+        };
+
+        match format_status {
+            Ok(status) if status.success() => {
+                println!("Disk formatted successfully to FAT32!");
+            }
+            _ => {
+                eprintln!("Failed to format disk image to FAT32.");
+                eprintln!("On Linux, make sure 'dosfstools' is installed (sudo apt install dosfstools).");
+                exit(1);
+            }
+        }
     }
 
     let mut cmd = Command::new("qemu-system-x86_64");
