@@ -5,7 +5,7 @@ use spin::Mutex;
 pub trait FileSystem: Send + Sync {
     fn read_file(&self, path: &str) -> Option<Vec<u8>>;
     fn write_file(&self, path: &str, data: &[u8]) -> Result<(), &'static str>;
-    fn append_file(&self, path: &str, data: &[u8]) -> Result<(), &'static str>; // Добавлено
+    fn append_file(&self, path: &str, data: &[u8]) -> Result<(), &'static str>; 
     fn create_dir(&self, path: &str) -> Result<(), &'static str>;
     fn delete_file(&self, path: &str) -> Result<(), &'static str>;
     fn list_dir(&self, path: Option<&str>) -> Result<(), &'static str>;
