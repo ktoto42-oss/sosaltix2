@@ -298,14 +298,15 @@ impl Fat32FileSystem {
         Some(())
     }
 
-    pub fn write_file(&self, filename: &str, data: &[u8]) -> Result<(), &'static str> {
-        let _ = self.delete_file(filename);
-
-        let (name_8, ext_3) = self.parse_to_8_3(filename)?;
-        
-        let mut cluster = *CURRENT_DIR_CLUSTER.lock(); 
+    pub fn write_file(&self, path: &str, data: &[u8]) -> Result<(), &'static str> {
+        let (parent_cluster, filename) = self.resolve_parent_and_name(path)?;
+        let mut cluster = parent_cluster;
         let cluster_bytes = self.sectors_per_cluster as usize * SECTOR_SIZE;
         let mut buf = vec![0u8; cluster_bytes];
+
+        let _ = self.delete_file(path);
+
+        let (name_8, ext_3) = self.parse_to_8_3(&filename)?;
 
         let first_cluster = self.find_free_cluster().ok_or("Disk Full: No free clusters found")?;
         self.write_fat_entry(first_cluster, END_OF_CLUSTER_CHAIN).ok_or("Failed to update FAT")?;
@@ -381,8 +382,9 @@ impl Fat32FileSystem {
         Err("Directory is full!")
     }
 
-    pub fn delete_file(&self, filename: &str) -> Result<(), &'static str> {
-        let mut cluster = *CURRENT_DIR_CLUSTER.lock();
+    pub fn delete_file(&self, path: &str) -> Result<(), &'static str> {
+        let (parent_cluster, filename) = self.resolve_parent_and_name(path)?;
+        let mut cluster = parent_cluster;
         let cluster_bytes = self.sectors_per_cluster as usize * SECTOR_SIZE;
         let mut buf = vec![0u8; cluster_bytes];
 
@@ -445,9 +447,10 @@ impl Fat32FileSystem {
         Err("File not found")
     }
 
-    pub fn create_dir(&self, dirname: &str) -> Result<(), &'static str> {
-        let (name_8, ext_3) = self.parse_to_8_3(dirname)?;
-        let mut cluster = *CURRENT_DIR_CLUSTER.lock();
+    pub fn create_dir(&self, path: &str) -> Result<(), &'static str> {
+        let (parent_cluster, dirname) = self.resolve_parent_and_name(path)?;
+        let (name_8, ext_3) = self.parse_to_8_3(&dirname)?;
+        let mut cluster = parent_cluster;
         let cluster_bytes = self.sectors_per_cluster as usize * SECTOR_SIZE;
         let mut buf = vec![0u8; cluster_bytes];
 
@@ -761,5 +764,32 @@ impl Fat32FileSystem {
         }
 
         Ok((current_cluster, is_dir, size))
+    }
+
+    pub fn resolve_parent_and_name(&self, path: &str) -> Result<(u32, String), &'static str> {
+        let trimmed = path.trim();
+        if trimmed.is_empty() {
+            return Err("Empty path");
+        }
+
+        if let Some(idx) = trimmed.rfind('/') {
+            let parent_path = &trimmed[..idx];
+            let name = &trimmed[idx + 1..];
+
+            if name.is_empty() {
+                return Err("Path cannot end with a slash for this operation");
+            }
+
+            let parent_path = if parent_path.is_empty() { "/" } else { parent_path };
+
+            let (parent_cluster, is_dir, _) = self.resolve_path(parent_path)?;
+            if !is_dir {
+                return Err("Parent component is not a directory");
+            }
+
+            Ok((parent_cluster, String::from(name)))
+        } else {
+            Ok((*CURRENT_DIR_CLUSTER.lock(), String::from(trimmed)))
+        }
     }
 }

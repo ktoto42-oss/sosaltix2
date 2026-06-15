@@ -133,39 +133,43 @@ fn get_fs() -> Option<crate::fat32::Fat32FileSystem> {
 }
 
 pub fn touch_cmd(filename: String) {
-    if filename.trim().is_empty() { 
-        println!("Usage: touch <filename>");
+    let trimmed = filename.trim();
+    if trimmed.is_empty() { 
+        println!("Usage: touch <file_path>");
         return; 
     }
     
     if let Some(fs) = get_fs() {
-        let _ = fs.write_file(filename.trim(), b"New empty file.");
-        println!("File '{filename}' created successfully");
-            
+        match fs.write_file(trimmed, b"New empty file.") {
+            Ok(_) => println!("File '{}' created successfully", trimmed),
+            Err(e) => println!("Error: {}", e),
+        }
     }
 }
 
 pub fn mkdir_cmd(dirname: String) {
-    if dirname.trim().is_empty() {
-        println!("Usage: mkdir <dirname>");
+    let trimmed = dirname.trim();
+    if trimmed.is_empty() {
+        println!("Usage: mkdir <directory_path>");
         return;
     }
     if let Some(fs) = get_fs() {
-        match fs.create_dir(dirname.trim()) {
-            Ok(_) => println!("Directory '{}' created successfully", dirname.trim()),
+        match fs.create_dir(trimmed) {
+            Ok(_) => println!("Directory '{}' created successfully", trimmed),
             Err(e) => println!("Error: {}", e),
         }
     }
 }
 
 pub fn rm_cmd(filename: String) {
-    if filename.trim().is_empty() {
-        println!("Usage: rm <filename>");
+    let trimmed = filename.trim();
+    if trimmed.is_empty() {
+        println!("Usage: rm <file_path>");
         return;
     }
     if let Some(fs) = get_fs() {
-        match fs.delete_file(filename.trim()) {
-            Ok(_) => println!("'{}' removed successfully.", filename.trim()),
+        match fs.delete_file(trimmed) {
+            Ok(_) => println!("'{}' removed successfully.", trimmed),
             Err(e) => println!("Error: {}", e),
         }
     }
