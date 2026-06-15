@@ -21,6 +21,7 @@ pub mod pci;
 pub mod virtio;
 pub mod apic;
 pub mod fat32;
+pub mod vfs;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]

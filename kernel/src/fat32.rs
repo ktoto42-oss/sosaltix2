@@ -793,3 +793,33 @@ impl Fat32FileSystem {
         }
     }
 }
+
+impl crate::vfs::FileSystem for Fat32FileSystem {
+    fn read_file(&self, path: &str) -> Option<alloc::vec::Vec<u8>> {
+        self.read_file(path)
+    }
+
+    fn write_file(&self, path: &str, data: &[u8]) -> Result<(), &'static str> {
+        self.write_file(path, data)
+    }
+
+    fn append_file(&self, path: &str, data: &[u8]) -> Result<(), &'static str> {
+        self.append_to_file(path, data)
+    }
+
+    fn create_dir(&self, path: &str) -> Result<(), &'static str> {
+        self.create_dir(path)
+    }
+
+    fn delete_file(&self, path: &str) -> Result<(), &'static str> {
+        self.delete_file(path)
+    }
+
+    fn list_dir(&self, path: Option<&str>) -> Result<(), &'static str> {
+        self.list_dir(path)
+    }
+
+    fn change_dir(&self, path: &str) -> Result<(), &'static str> {
+        self.change_dir(path)
+    }
+}

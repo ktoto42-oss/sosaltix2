@@ -13,6 +13,7 @@ use kernel::memory::BootInfoFrameAllocator;
 use x86_64::instructions::interrupts;
 use kernel::task::executor::Executor;
 use kernel::task::Task;
+extern crate alloc;
 
 
 const BOOTLOADER_CONFIG: BootloaderConfig = {
@@ -61,6 +62,14 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
             blk_device.bus, blk_device.slot, blk_device.func
         );
         kernel::virtio::init_disk(&blk_device, &mut mapper, &mut frame_allocator);
+
+        if let Some(fs) = kernel::fat32::Fat32FileSystem::init() {
+            println!("FAT32 File System initialized successfully!");
+            kernel::vfs::register_root_fs(alloc::boxed::Box::new(fs));
+        } else {
+            println!("Warning: Failed to initialize FAT32 File System.");
+        }
+
     } else {
         println!("VirtIO Block Device not found!");
     }
