@@ -287,7 +287,6 @@ async fn process_command() {
         "touch" => { crate::commands::base::touch_cmd(args); }
         "mkdir" => { crate::commands::base::mkdir_cmd(args); }
         "rm" => { crate::commands::base::rm_cmd(args); }
-        "read-sector" => { crate::commands::base::read_sector_cmd(args); }
         "cd" => { crate::commands::base::cd_cmd(args); }
         _ => {
             println!("Unknown command: '{}'", command);
