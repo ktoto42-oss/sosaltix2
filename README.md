@@ -1,7 +1,6 @@
 # sosaltix2
 
 [![Rust](https://img.shields.io/badge/rust-2024%20edition-orange)](https://www.rust-lang.org/)
-[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 **sosaltix2** — это маленькая операционная система, написанная на Rust, частично следуя ["Writing an OS in Rust"](https://os.phil-opp.com/). Проект реализует базовое ядро x86_64 с поддержкой прерываний, пейджинга, heap и асинхронной кооперативной многозадачности.
 
